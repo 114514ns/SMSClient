@@ -18,7 +18,17 @@ func main() {
 	//client.sendMessage("EZ4ENCE")
 	var zhihu = new(internel.ZhihuClient)
 	zhihu.Cookie = cookie
-	zhihu.GetRecommend()
+	recommend := zhihu.GetRecommend()
+	client.cleanMessage()
+	client.setPhoneNum()
+	for _, item := range recommend {
+		if len(item.Content) <= 300 {
+			var msg = item.Title + "\r\n" + item.Content
+
+			fmt.Println(msg)
+			client.sendMessage(msg)
+		}
+	}
 }
 
 type SMSClient struct {
@@ -32,7 +42,6 @@ func (smsClient *SMSClient) sendPOST(msg string) {
 	method := "POST"
 
 	payload := strings.NewReader(msg)
-	fmt.Println(payload)
 	client := &http.Client{}
 	req, err := http.NewRequest(method, url, payload)
 
@@ -62,4 +71,15 @@ func (smsClient *SMSClient) sendPOST(msg string) {
 }
 func (smsClient *SMSClient) sendMessage(msg string) {
 	smsClient.sendPOST(`{commandType:14,commandMsg:{"ledFlag":1,"vibration":0,"sound":0,"smsType":5,"context":"` + msg + `","displayNum":1,"displayType":1},imei:862677060127893,cardId:134182}`)
+}
+func (smsClient *SMSClient) cleanMessage() {
+	smsClient.sendPOST("{\n  \"cardId\": 134182,\n  \"imei\": \"862677060127893\",\n  \"commandType\": 9,\n  \"commandMsg\": \"{\\\"restart\\\":0,\\\"restore\\\":1}\"\n}")
+}
+func (smsClient *SMSClient) setPhoneNum() {
+	smsClient.sendPOST(`{
+  "commandType": 6,
+  "commandMsg": "{\"addPhones\":[\"18795702792\u003d0000-2359+0000-2359\"],\"delPhones\":[],\"callType\":2,\"dayList\":\"1+2+3+4+5+6+0\"}",
+  "imei": "862677060127893",
+  "cardId": 134182
+}`)
 }
